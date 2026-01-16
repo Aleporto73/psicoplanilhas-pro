@@ -10,56 +10,52 @@ export const generateCanonicalText = async (
   hasImage: boolean
 ): Promise<ReportVersions> => {
   const systemInstruction = `
-    VOCÊ É UM REDATOR CLÍNICO SÊNIOR ESPECIALIZADO EM RELATÓRIOS PROFISSIONAIS.
-    Seu objetivo é gerar um RELATÓRIO TOTALMENTE EDITÁVEL, fluido e elegante para Word ou Google Docs.
+    VOCÊ É UM REDATOR CLÍNICO E EDITORIAL SÊNIOR.
+    Seu objetivo é gerar um documento de ALTA ELEGÂNCIA, pronto para impressão, sem usar símbolos de programação ou markdown (como * ou #).
 
     ════════════════════════════════
-    REGRAS DE FORMATAÇÃO (ESTRITAS)
+    DIRETRIZES DE FORMATAÇÃO (ESTRITAS)
     ════════════════════════════════
-    1. NÃO use hashtags (#) para títulos.
-    2. Títulos de seção devem ser: **NEGRITO E MAIÚSCULAS** (Ex: **IDENTIFICAÇÃO**).
-    3. Listas de escores/índices: Use asterisco (*) (Ex: * QI Total: 110).
-    4. Texto corrido: Parágrafos fluidos, bem encadeados e sem interrupções robóticas.
+    1. PROIBIDO o uso de asteriscos (*), hashtags (#), underscores (_) ou qualquer símbolo de marcação.
+    2. TÍTULOS DE SEÇÃO: Devem vir apenas em MAIÚSCULAS em uma linha isolada.
+    3. LISTAS: Não use marcadores. Use frases conectivas fluidas (ex: "No que tange à memória...", "Em relação à atenção...") ou parágrafos distintos.
+    4. ESPAÇAMENTO: Garanta que cada seção tenha parágrafos bem definidos.
     
     ════════════════════════════════
-    LÓGICA DE IMAGEM (CONDICIONAL)
+    ESTILO EDITORIAL
     ════════════════════════════════
-    ${hasImage ? 
-      "- HOUVE IMAGEM: Mencione levemente gráficos/figuras de forma natural (Ex: 'Conforme observado no perfil gráfico apresentado...', 'A representação visual reforça...')." : 
-      "- NÃO HOUVE IMAGEM: Proibido mencionar gráficos, figuras, imagens ou representações visuais."}
+    - Use uma linguagem fluida, elegante e humana.
+    - Evite frases curtas e robóticas.
+    - Conecte os resultados técnicos de forma narrativa.
 
     ════════════════════════════════
-    PRINCÍPIOS CLÍNICOS E ÉTICOS
+    LÓGICA DE IMAGEM
     ════════════════════════════════
-    - NUNCA emita diagnóstico fechado. Use termos como: "indicadores compatíveis com", "perfil sugestivo de", "sinais que merecem acompanhamento".
-    - CONFIANÇA TOTAL: Use exatamente os dados da planilha fornecidos.
-    - ADAPTAÇÃO:
-      - Simples: Linguagem clara e acolhedora para pais.
-      - Profissional (V1): Equilíbrio clínico-humanizado elegante.
-      - Técnica: Linguagem especializada para prontuário/equipe.
+    ${hasImage ? 
+      "Mencione levemente o perfil gráfico de forma integrada ao texto." : 
+      "Não faça qualquer menção a gráficos ou elementos visuais."}
 
     ════════════════════════════════
     ESTRUTURA DO RELATÓRIO
     ════════════════════════════════
-    1. **IDENTIFICAÇÃO**
-    2. **CONTEXTUALIZAÇÃO DA AVALIAÇÃO**
-    3. **RESUMO EXECUTIVO**
-    4. **ANÁLISE DOS DOMÍNIOS AVALIADOS**
-    5. **PONTOS FORTES IDENTIFICADOS**
-    6. **ÁREAS DE ATENÇÃO E IMPLICAÇÕES FUNCIONAIS**
-    7. **CONSIDERAÇÕES FINAIS**
-    8. **RECOMENDAÇÕES**
+    1. IDENTIFICAÇÃO (Não repita os campos do formulário, apenas o título)
+    2. CONTEXTUALIZAÇÃO DA AVALIAÇÃO
+    3. RESUMO EXECUTIVO
+    4. ANÁLISE DOS DOMÍNIOS AVALIADOS
+    5. PONTOS FORTES E POTENCIALIDADES
+    6. ÁREAS DE ATENÇÃO E IMPLICAÇÕES
+    7. RECOMENDAÇÕES E DIRETRIZES
+    8. CONSIDERAÇÕES FINAIS
 
-    ENCERRAMENTO ÉTICO EM TODAS: "${ETHICAL_POLICIES.mandatoryClosing}"
+    ENCERRAMENTO ÉTICO: "${ETHICAL_POLICIES.mandatoryClosing}"
   `;
 
   const prompt = `
-    DADOS PARA REDAÇÃO:
+    DADOS TÉCNICOS: ${JSON.stringify(data, null, 2)}
     PROFISSÃO: ${context.profession}
     OBJETIVO: ${context.objective}
-    DADOS TÉCNICOS: ${JSON.stringify(data, null, 2)}
 
-    GERE AS TRÊS VERSÕES DO RELATÓRIO AGORA NO FORMATO EDITÁVEL.
+    GERE AS TRÊS VERSÕES DO RELATÓRIO SEM QUALQUER MARCAÇÃO DE ASTERISCOS OU HASHTAGS.
   `;
 
   try {
@@ -78,26 +74,27 @@ export const generateCanonicalText = async (
           },
           required: ["simple", "professional", "technical"]
         },
-        temperature: 0.2
+        temperature: 0.3
       }
     });
 
     const versions = JSON.parse(response.text || "{}") as ReportVersions;
     
-    const wrap = (t: string) => {
-      let text = t.replace(/#/g, ''); // Garantia absoluta contra hashtags
-      if (!text.includes(ETHICAL_POLICIES.mandatoryClosing)) {
-        text += `\n\n**CONSIDERAÇÕES FINAIS**\n\n${ETHICAL_POLICIES.mandatoryClosing}`;
+    const finalize = (t: string) => {
+      // Remove resquícios de markdown caso o modelo alucine
+      let cleanText = t.replace(/[*#_~]/g, '').trim();
+      if (!cleanText.includes(ETHICAL_POLICIES.mandatoryClosing)) {
+        cleanText += `\n\nCONSIDERAÇÕES FINAIS\n\n${ETHICAL_POLICIES.mandatoryClosing}`;
       }
-      return text;
+      return cleanText;
     };
 
     return {
-      simple: wrap(versions.simple),
-      professional: wrap(versions.professional),
-      technical: wrap(versions.technical)
+      simple: finalize(versions.simple),
+      professional: finalize(versions.professional),
+      technical: finalize(versions.technical)
     };
   } catch (error: any) {
-    throw new Error(`Falha no Redator Sênior: ${error.message}`);
+    throw new Error(`Falha na geração editorial: ${error.message}`);
   }
 };

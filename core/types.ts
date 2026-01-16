@@ -48,16 +48,22 @@ export interface ReportContext {
 }
 
 export interface ReportVersions {
-  readonly simple: string;
-  readonly professional: string;
-  readonly technical: string;
+  simple: string;
+  professional: string;
+  technical: string;
+}
+
+export interface PatientInfo {
+  name: string;
+  age: string;
+  date: string;
 }
 
 export interface CanonicalReport {
   readonly id: string;
   readonly context: ReportContext;
   readonly extracted: ReadonlyArray<ExtractedResult>;
-  readonly versions: ReportVersions;
+  versions: ReportVersions;
   readonly createdAt: string;
   readonly engineVersion: string;
 }
