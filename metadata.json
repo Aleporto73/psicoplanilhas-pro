@@ -1,0 +1,7 @@
+{
+  "name": "Psicoplanilhas PRO",
+  "description": "Transformação ética e profissional de dados de avaliação em relatórios canônicos para saúde e educação.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
